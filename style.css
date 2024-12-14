@@ -12,6 +12,7 @@ body {
   min-height: 100vh;
   background: linear-gradient(to bottom, #ff6600, #ffe6cc);
   color: #333;
+  overflow-x: hidden;
 }
 
 /* Hero Section */
@@ -77,11 +78,16 @@ body {
   list-style: none;
   z-index: 10;
   padding: 10px;
-  width: 150px;
+  width: 200px;
+  display: none;
+}
+
+#menu.visible {
+  display: block;
 }
 
 #menu li {
-  padding: 8px 10px;
+  padding: 10px 15px;
   margin: 5px 0;
   cursor: pointer;
   border-radius: 5px;
@@ -95,8 +101,33 @@ body {
   background-color: #ff6600;
 }
 
-#menu.hidden {
-  display: none;
+/* Upload Section */
+.upload-section {
+  padding: 20px;
+  background: #fff;
+  border: 2px solid #ff9966;
+  border-radius: 10px;
+  margin: 30px auto;
+  max-width: 600px;
+  box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.upload-section input[type="file"] {
+  display: block;
+  margin: 20px auto;
+  padding: 10px;
+  border: 2px solid #ff9966;
+  border-radius: 5px;
+  background: #ffe6cc;
+  color: #ff6600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-section input[type="file"]:hover {
+  background: #ff9966;
+  color: white;
 }
 
 /* Fullscreen Viewer */
@@ -105,26 +136,30 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: calc(100% - 50px); /* Leave space for the footer */
+  height: calc(100% - 50px); /* Leaves space for the footer */
   background: white;
   z-index: 1000;
-  display: none; /* Ensure it's hidden by default */
+  display: none; /* Hidden by default */
   flex-direction: column;
-  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-y: auto; /* Enables vertical scrolling */
+  padding-bottom: 20px; /* Ensures spacing above the footer */
 }
 
 #fullscreenViewer.visible {
-  display: flex; /* Show on activation */
+  display: flex; /* Show when toggled */
 }
 
 #viewer {
   width: 100%;
   height: auto;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 #viewer canvas {
-  width: 100%; /* Ensure documents span full width */
+  width: 100%; /* Ensures full-width documents */
   height: auto;
 }
 
@@ -147,6 +182,57 @@ body {
   background: #ff9966;
 }
 
+/* History Section */
+#historySection {
+  display: none; /* Hidden by default */
+  padding: 20px;
+  background: white;
+  border: 2px solid #ff9966;
+  border-radius: 10px;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+#historySection.visible {
+  display: block; /* Show when toggled */
+}
+
+#historyList {
+  list-style: none;
+  padding: 0;
+}
+
+#historyList li {
+  padding: 10px;
+  margin-bottom: 5px;
+  background: #ffe6cc;
+  border: 1px solid #ff9966;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+#historyList li:hover {
+  background: #ff9966;
+  color: white;
+}
+
+#clearHistory {
+  background: #ff6600;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#clearHistory:hover {
+  background: #ff9966;
+}
+
 /* Footer */
 footer {
   text-align: center;
@@ -154,4 +240,6 @@ footer {
   color: white;
   padding: 10px;
   font-size: 0.8rem;
+  position: relative;
+  z-index: 10;
 }
