@@ -130,6 +130,44 @@ body {
   color: white;
 }
 
+/* Recent Uploads Section */
+#recentUploads {
+  padding: 20px;
+  background: white;
+  border: 2px solid #ff9966;
+  border-radius: 10px;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+#recentUploads h2 {
+  margin-bottom: 15px;
+  text-align: center;
+  color: #ff6600;
+}
+
+#recentUploadsList {
+  list-style: none;
+  padding: 0;
+}
+
+#recentUploadsList li {
+  padding: 10px;
+  margin-bottom: 5px;
+  background: #ffe6cc;
+  border: 1px solid #ff9966;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+#recentUploadsList li:hover {
+  background: #ff9966;
+  color: white;
+}
+
 /* Fullscreen Viewer */
 #fullscreenViewer {
   position: fixed;
@@ -240,6 +278,5 @@ footer {
   color: white;
   padding: 10px;
   font-size: 0.8rem;
-  position: relative;
-  z-index: 10;
+  margin-top: auto;
 }
