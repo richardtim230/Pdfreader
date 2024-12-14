@@ -159,3 +159,25 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// History click event
+historyList.addEventListener("click", (event) => {
+  const fileName = event.target.textContent;
+  if (fileName) {
+    const file = history.find((item) => item === fileName); // Simulating reloading
+    if (file) {
+      loadFromHistory(file); // Call appropriate rendering based on file type
+    }
+  }
+});
+
+// Load material from history
+function loadFromHistory(fileName) {
+  // Simulate re-rendering content from the file name in history
+  // In production, you would reload the corresponding data from storage
+  const fileExtension = fileName.split('.').pop().toLowerCase();
+
+  switch (fileExtension) {
+    case "pdf":
+      renderPDFFromHistory();
+      break;
+    case ".ppt":
