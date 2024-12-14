@@ -184,7 +184,7 @@ body {
   display: none; /* Hidden by default */
   flex-direction: column;
   overflow-y: auto; /* Enables vertical scrolling */
-  padding-bottom: 5px; /* Ensures spacing above the footer */
+  padding-bottom: 10px; /* Ensures spacing above the footer */
 }
 
 #fullscreenViewer.visible {
@@ -208,7 +208,7 @@ body {
 /* Close Button */
 .close-button {
   position: fixed;
-  top: 10px;
+  top: 20px;
   right: 10px;
   padding: 10px 20px;
   background: #ff6600;
