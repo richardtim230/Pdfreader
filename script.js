@@ -1,4 +1,38 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const recentUploadsSection = document.getElementById("recentUploads");
+  const recentUploadsList = document.getElementById("recentUploadsList");
+
+  const history = JSON.parse(localStorage.getItem("documentHistory")) || [];
+
+  // Update recent uploads section
+  function updateRecentUploads() {
+    recentUploadsList.innerHTML = ""; // Clear the list
+
+    const recentFiles = history.slice(-3); // Show the last 3 files
+    recentFiles.reverse().forEach((file) => {
+      const li = document.createElement("li");
+      li.textContent = file;
+      li.addEventListener("click", () => loadFromHistory(file));
+      recentUploadsList.appendChild(li);
+    });
+
+    if (recentFiles.length > 0) {
+      recentUploadsSection.classList.remove("hidden");
+    } else {
+      recentUploadsSection.classList.add("hidden");
+    }
+  }
+
+  function loadFromHistory(fileName) {
+    alert(`Loading ${fileName}...`); // Placeholder for loading logic
+  }
+
+  updateRecentUploads();
+});
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
   const startApp = document.getElementById("startApp");
   const uploadSection = document.querySelector(".upload-section");
   const fileInput = document.getElementById("fileInput");
