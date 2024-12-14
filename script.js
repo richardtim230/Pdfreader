@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     recentUploadsList.innerHTML = ""; // Clear previous entries
 
     // Show the last 3 uploads
-    const recentFiles = uploads.slice(-7).reverse();
+    const recentFiles = uploads.slice(-30).reverse();
     recentFiles.forEach((upload) => {
       const li = document.createElement("li");
       li.textContent = upload.name;
