@@ -9,7 +9,7 @@
 body {
   display: flex;
   flex-direction: column;
-  min-height: 90vh;
+  min-height: 70vh;
   background: linear-gradient(to bottom, #ff6600, #ffe6cc);
   color: #333;
   overflow-x: hidden;
