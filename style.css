@@ -178,13 +178,13 @@ body {
   top: 20px;
   left: 0;
   width: 100%;
-  height: calc(95% - 50px); /* Leaves space for the footer */
+  height: calc(95%); /* Leaves space for the footer */
   background: white;
   z-index: 1000;
   display: none; /* Hidden by default */
   flex-direction: column;
   overflow-y: auto; /* Enables vertical scrolling */
-  padding-bottom: 10px; /* Ensures spacing above the footer */
+  padding-bottom: 5px; /* Ensures spacing above the footer */
 }
 
 #fullscreenViewer.visible {
