@@ -1,18 +1,29 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const fileInput = document.getElementById("fileInput");
   const recentUploadsSection = document.getElementById("recentUploads");
   const recentUploadsList = document.getElementById("recentUploadsList");
+  const historySection = document.getElementById("historySection");
+  const historyList = document.getElementById("historyList");
+  const clearHistory = document.getElementById("clearHistory");
+  const fullscreenViewer = document.getElementById("fullscreenViewer");
+  const viewer = document.getElementById("viewer");
+  const closeViewer = document.getElementById("closeViewer");
 
-  const history = JSON.parse(localStorage.getItem("documentHistory")) || [];
+  // Initialize uploads from localStorage
+  const uploads = JSON.parse(localStorage.getItem("uploads")) || [];
 
-  // Update recent uploads section
+  /**
+   * Updates the Recent Uploads Section
+   */
   function updateRecentUploads() {
-    recentUploadsList.innerHTML = ""; // Clear the list
+    recentUploadsList.innerHTML = ""; // Clear previous entries
 
-    const recentFiles = history.slice(-3); // Show the last 3 files
-    recentFiles.reverse().forEach((file) => {
+    // Show the last 3 uploads
+    const recentFiles = uploads.slice(-3).reverse();
+    recentFiles.forEach((upload) => {
       const li = document.createElement("li");
-      li.textContent = file;
-      li.addEventListener("click", () => loadFromHistory(file));
+      li.textContent = upload.name;
+      li.addEventListener("click", () => loadUpload(upload));
       recentUploadsList.appendChild(li);
     });
 
@@ -23,86 +34,87 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function loadFromHistory(fileName) {
-    alert(`Loading ${fileName}...`); // Placeholder for loading logic
+  /**
+   * Updates the History Section
+   */
+  function updateHistory() {
+    historyList.innerHTML = ""; // Clear previous entries
+
+    uploads.forEach((upload) => {
+      const li = document.createElement("li");
+      li.textContent = upload.name;
+      li.addEventListener("click", () => loadUpload(upload));
+      historyList.appendChild(li);
+    });
+
+    if (uploads.length > 0) {
+      historySection.classList.remove("hidden");
+    } else {
+      historySection.classList.add("hidden");
+    }
   }
 
-  updateRecentUploads();
-});
-
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const startApp = document.getElementById("startApp");
-  const uploadSection = document.querySelector(".upload-section");
-  const fileInput = document.getElementById("fileInput");
-  const viewer = document.getElementById("viewer");
-  const fullscreenViewer = document.getElementById("fullscreenViewer");
-  const closeViewer = document.getElementById("closeViewer");
-  const toggleMenu = document.getElementById("toggleMenu");
-  const menu = document.getElementById("menu");
-  const viewHistory = document.getElementById("viewHistory");
-  const historySection = document.getElementById("historySection");
-  const historyList = document.getElementById("historyList");
-  const clearHistory = document.getElementById("clearHistory");
-
-  // Initialize history from localStorage
-  const history = JSON.parse(localStorage.getItem("documentHistory")) || [];
-
-  // Toggle Hamburger Menu
-  toggleMenu.addEventListener("click", () => {
-    menu.classList.toggle("hidden");
-  });
-
-  // Show Upload Section
-  startApp.addEventListener("click", () => {
-    uploadSection.classList.remove("hidden");
-  });
-
-  // Handle File Upload
+  /**
+   * Handles file input and saves the upload
+   */
   fileInput.addEventListener("change", async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      const fileType = file.name.split(".").pop().toLowerCase();
-      viewer.innerHTML = ""; // Clear previous content
+    if (!file) return;
 
-      // Open Fullscreen Viewer
-      fullscreenViewer.classList.add("visible");
+    const fileType = file.name.split(".").pop().toLowerCase();
 
-      // Render file based on type
-      switch (fileType) {
-        case "pdf":
-          await renderPDF(file);
-          break;
-        case "pptx":
-          await renderPPT(file);
-          break;
-        case "docx":
-          await renderWord(file);
-          break;
-        default:
-          viewer.innerHTML = "<p>Unsupported file format!</p>";
-          fullscreenViewer.classList.remove("visible");
-      }
-
-      // Save file to history
-      addToHistory(file.name);
+    if (!["pdf", "pptx", "docx"].includes(fileType)) {
+      alert("Unsupported file type. Please upload a PDF, PPTX, or DOCX file.");
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const fileContent = e.target.result;
+
+      // Save to uploads and reload the viewer
+      saveUpload(file.name, fileType, fileContent);
+      loadUpload({ name: file.name, type: fileType, content: fileContent });
+    };
+
+    reader.readAsDataURL(file); // Convert file to Base64
   });
 
-  // Close Fullscreen Viewer
-  closeViewer.addEventListener("click", () => {
-    fullscreenViewer.classList.remove("visible");
-    viewer.innerHTML = ""; // Clear viewer content
-  });
+  /**
+   * Saves an uploaded file to localStorage
+   */
+  function saveUpload(name, type, content) {
+    uploads.push({ name, type, content });
+    localStorage.setItem("uploads", JSON.stringify(uploads));
+    updateRecentUploads();
+    updateHistory();
+  }
 
-  // Render PDF
-  async function renderPDF(file) {
+  /**
+   * Loads an uploaded file into the viewer
+   */
+  function loadUpload(upload) {
+    viewer.innerHTML = ""; // Clear previous content
+    fullscreenViewer.classList.add("visible"); // Open the viewer
+
+    if (upload.type === "pdf") {
+      renderPDF(upload.content);
+    } else if (upload.type === "pptx") {
+      renderPPT(upload.content);
+    } else if (upload.type === "docx") {
+      renderDOCX(upload.content);
+    }
+  }
+
+  /**
+   * Renders a PDF file in the viewer
+   */
+  async function renderPDF(content) {
     try {
-      const pdfjsLib = window['pdfjs-dist/build/pdf'];
+      const pdfjsLib = window["pdfjs-dist/build/pdf"];
       pdfjsLib.GlobalWorkerOptions.workerSrc = "./lib/pdf.worker.js";
 
-      const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+      const pdf = await pdfjsLib.getDocument(content).promise;
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const canvas = document.createElement("canvas");
@@ -121,12 +133,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Render PPTX
-  async function renderPPT(file) {
+  /**
+   * Renders a PPTX file in the viewer
+   */
+  async function renderPPT(content) {
     try {
-      const pptx = await file.arrayBuffer();
-      const pptxLib = await import('https://unpkg.com/pptxgenjs@3.6.0/dist/pptxgen.min.js');
-      const presentation = await pptxLib.PptxGenJS.load(pptx);
+      const arrayBuffer = await (await fetch(content)).arrayBuffer();
+      const pptxLib = await import("https://unpkg.com/pptxgenjs@3.6.0/dist/pptxgen.min.js");
+      const presentation = await pptxLib.PptxGenJS.load(arrayBuffer);
 
       viewer.innerHTML = `<p>Loaded PPTX with ${presentation.slides.length} slides:</p>`;
       presentation.slides.forEach((slide, index) => {
@@ -141,55 +155,44 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Render DOCX
-  async function renderWord(file) {
+  /**
+   * Renders a DOCX file in the viewer
+   */
+  async function renderDOCX(content) {
     try {
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        const docx = event.target.result;
-        const mammoth = window.mammoth;
+      const arrayBuffer = await (await fetch(content)).arrayBuffer();
+      const mammoth = window.mammoth;
 
-        mammoth
-          .extractRawText({ arrayBuffer: docx })
-          .then((result) => {
-            viewer.innerHTML = `<p>Extracted Word Document Content:</p><div>${result.value}</div>`;
-          })
-          .catch((err) => {
-            console.error("Error rendering DOCX:", err);
-            viewer.innerHTML = "<p>Failed to load DOCX file.</p>";
-          });
-      };
-      reader.readAsArrayBuffer(file);
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      const textContainer = document.createElement("div");
+      textContainer.className = "docx-text";
+      textContainer.innerHTML = result.value.replace(/\n/g, "<br>"); // Preserve line breaks
+      viewer.appendChild(textContainer);
     } catch (error) {
-      console.error("Error reading DOCX file:", error);
+      console.error("Error rendering DOCX:", error);
+      viewer.innerHTML = "<p>Failed to load DOCX file.</p>";
     }
   }
 
-  // Add File to History
-  function addToHistory(fileName) {
-    if (!history.includes(fileName)) {
-      history.push(fileName);
-      localStorage.setItem("documentHistory", JSON.stringify(history));
-    }
-  }
-
-  // Display History
-  viewHistory.addEventListener("click", () => {
-    historySection.classList.add("visible");
-    historyList.innerHTML = "";
-
-    history.forEach((fileName) => {
-      const li = document.createElement("li");
-      li.textContent = fileName;
-      historyList.appendChild(li);
-    });
-  });
-
-  // Clear History
+  /**
+   * Clears the history from localStorage and UI
+   */
   clearHistory.addEventListener("click", () => {
-    localStorage.removeItem("documentHistory");
-    history.length = 0;
-    historyList.innerHTML = "<p>History cleared!</p>";
+    localStorage.removeItem("uploads");
+    uploads.length = 0; // Clear the in-memory uploads array
+    updateRecentUploads();
+    updateHistory();
   });
-});
 
+  /**
+   * Closes the fullscreen viewer
+   */
+  closeViewer.addEventListener("click", () => {
+    fullscreenViewer.classList.remove("visible");
+    viewer.innerHTML = ""; // Clear viewer content
+  });
+
+  // Initialize the app
+  updateRecentUploads();
+  updateHistory();
+});
