@@ -208,9 +208,9 @@ body {
 /* Close Button */
 .close-button {
   position: fixed;
-  top: 10%;
-  right: 5px;
-  padding: 10px 10px;
+  top: 8%;
+  right: 4px;
+  padding: 5px 6px;
   background: #ff6600;
   color: white;
   border: none;
