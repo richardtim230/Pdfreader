@@ -280,3 +280,17 @@ footer {
   font-size: 0.8rem;
   margin-top: auto;
 }
+
+/* DOCX Text */
+.docx-text {
+  text-align: left;
+  line-height: 1.6;
+  padding: 10px;
+  border: 1px solid #ff9966;
+  border-radius: 5px;
+  background: #f9f9f9;
+  width: 100%;
+  max-width: 800px;
+  margin: 20px auto;
+  white-space: pre-wrap; /* Preserve spacing */
+}
