@@ -19,19 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
     recentUploadsList.innerHTML = ""; // Clear previous entries
 
     // Show the last 3 uploads
-    const recentFiles = uploads.slice(-30).reverse();
+    const recentFiles = uploads.slice(-3).reverse();
     recentFiles.forEach((upload) => {
-      const li = document.createElement("li");
-      li.textContent = upload.name;
-      li.addEventListener("click", () => loadUpload(upload));
+      const li = createUploadListItem(upload);
       recentUploadsList.appendChild(li);
     });
 
-    if (recentFiles.length > 0) {
-      recentUploadsSection.classList.remove("hidden");
-    } else {
-      recentUploadsSection.classList.add("hidden");
-    }
+    recentUploadsSection.classList.toggle("hidden", uploads.length === 0);
   }
 
   /**
@@ -41,17 +35,34 @@ document.addEventListener("DOMContentLoaded", () => {
     historyList.innerHTML = ""; // Clear previous entries
 
     uploads.forEach((upload) => {
-      const li = document.createElement("li");
-      li.textContent = upload.name;
-      li.addEventListener("click", () => loadUpload(upload));
+      const li = createUploadListItem(upload);
       historyList.appendChild(li);
     });
 
-    if (uploads.length > 0) {
-      historySection.classList.remove("hidden");
-    } else {
-      historySection.classList.add("hidden");
-    }
+    historySection.classList.toggle("hidden", uploads.length === 0);
+  }
+
+  /**
+   * Creates an upload list item with delete functionality
+   */
+  function createUploadListItem(upload) {
+    const li = document.createElement("li");
+    li.className = "upload-item";
+
+    // File Name
+    const span = document.createElement("span");
+    span.textContent = upload.name;
+    span.addEventListener("click", () => loadUpload(upload));
+    li.appendChild(span);
+
+    // Delete Button
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.className = "delete-button";
+    deleteButton.addEventListener("click", () => deleteUpload(upload.name));
+    li.appendChild(deleteButton);
+
+    return li;
   }
 
   /**
@@ -84,10 +95,32 @@ document.addEventListener("DOMContentLoaded", () => {
    * Saves an uploaded file to localStorage
    */
   function saveUpload(name, type, content) {
+    // Remove duplicates by file name
+    const index = uploads.findIndex((upload) => upload.name === name);
+    if (index !== -1) {
+      uploads.splice(index, 1); // Remove the old entry
+    }
+
+    // Add the new or updated entry
     uploads.push({ name, type, content });
     localStorage.setItem("uploads", JSON.stringify(uploads));
+
     updateRecentUploads();
     updateHistory();
+  }
+
+  /**
+   * Deletes an uploaded file from localStorage
+   */
+  function deleteUpload(name) {
+    const index = uploads.findIndex((upload) => upload.name === name);
+    if (index !== -1) {
+      uploads.splice(index, 1); // Remove the entry
+      localStorage.setItem("uploads", JSON.stringify(uploads));
+
+      updateRecentUploads();
+      updateHistory();
+    }
   }
 
   /**
