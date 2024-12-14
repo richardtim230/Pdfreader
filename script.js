@@ -3,33 +3,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const uploadSection = document.querySelector(".upload-section");
   const fileInput = document.getElementById("fileInput");
   const viewer = document.getElementById("viewer");
+  const fullscreenViewer = document.getElementById("fullscreenViewer");
+  const closeViewer = document.getElementById("closeViewer");
+  const toggleMenu = document.getElementById("toggleMenu");
+  const menu = document.getElementById("menu");
+  const viewHistory = document.getElementById("viewHistory");
+  const historySection = document.getElementById("historySection");
+  const historyList = document.getElementById("historyList");
+  const clearHistory = document.getElementById("clearHistory");
 
-  // Toolbar for exporting files
-  const exportButton = document.createElement("button");
-  exportButton.innerText = "Export File";
-  exportButton.className = "toolbar-button hidden";
-  document.body.appendChild(exportButton);
+  // Initialize history from localStorage
+  const history = JSON.parse(localStorage.getItem("documentHistory")) || [];
 
-  // Variables for file and edits
-  let currentFile = null;
-  let currentFileType = null;
-  let edits = {}; // Store annotations and comments for offline use
-
-  // Show upload section on "Get Started"
-  startApp.addEventListener("click", () => {
-    uploadSection.classList.remove("hidden");
-    window.scrollTo({ top: uploadSection.offsetTop, behavior: "smooth" });
+  // Toggle Hamburger Menu
+  toggleMenu.addEventListener("click", () => {
+    menu.classList.toggle("hidden");
   });
 
-  // Handle file upload
-  fileInput.addEventListener("change", async (event) => {
+  // Show Upload Section
+  startApp.addEventListener("click", () => {
+    uploadSection.classList.remove("hidden");
+  });
+
+  // Handle File Upload
+  fileInput.addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (file) {
-      currentFile = file;
-      currentFileType = file.name.split(".").pop().toLowerCase();
+      const fileType = file.name.split(".").pop().toLowerCase();
       viewer.innerHTML = ""; // Clear previous content
 
-      switch (currentFileType) {
+      switch (fileType) {
         case "pdf":
           renderPDF(file);
           break;
@@ -40,19 +43,29 @@ document.addEventListener("DOMContentLoaded", () => {
           renderWord(file);
           break;
         default:
-          viewer.innerHTML = "<p>Unsupported file format! Please upload PDF, PPTX, or DOCX files.</p>";
+          viewer.innerHTML = "<p>Unsupported file format!</p>";
       }
-      exportButton.classList.remove("hidden");
+
+      // Save file to history
+      addToHistory(file.name);
+
+      // Open Fullscreen Viewer
+      fullscreenViewer.classList.remove("hidden");
     }
   });
 
-  // PDF Rendering with Annotations
+  // Close Fullscreen Viewer
+  closeViewer.addEventListener("click", () => {
+    fullscreenViewer.classList.add("hidden");
+    viewer.innerHTML = ""; // Clear viewer content
+  });
+
+  // Render PDF
   async function renderPDF(file) {
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
     pdfjsLib.GlobalWorkerOptions.workerSrc = "./lib/pdf.worker.js";
 
     const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-    viewer.innerHTML = `<p>Loaded PDF with ${pdf.numPages} pages:</p>`;
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const canvas = document.createElement("canvas");
@@ -64,16 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await page.render({ canvasContext: context, viewport }).promise;
       viewer.appendChild(canvas);
-
-      // Add Annotation Button
-      const annotationButton = document.createElement("button");
-      annotationButton.innerText = `Annotate Page ${i}`;
-      annotationButton.onclick = () => addAnnotation(canvas, i);
-      viewer.appendChild(annotationButton);
     }
   }
 
-  // PPTX Rendering with Comments
+  // Render PPTX
   async function renderPPT(file) {
     const pptx = await file.arrayBuffer();
     const pptxLib = await import('https://unpkg.com/pptxgenjs@3.6.0/dist/pptxgen.min.js');
@@ -85,16 +92,10 @@ document.addEventListener("DOMContentLoaded", () => {
       slideElement.innerText = `Slide ${index + 1}: ${slide.title || "Untitled"}`;
       slideElement.className = "slide-preview";
       viewer.appendChild(slideElement);
-
-      // Add Comment Button
-      const commentButton = document.createElement("button");
-      commentButton.innerText = `Comment on Slide ${index + 1}`;
-      commentButton.onclick = () => addComment(slideElement, index + 1);
-      viewer.appendChild(commentButton);
     });
   }
 
-  // DOCX Rendering with Editable Text
+  // Render DOCX
   async function renderWord(file) {
     const reader = new FileReader();
     reader.onload = function (event) {
@@ -104,8 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
       mammoth
         .extractRawText({ arrayBuffer: docx })
         .then((result) => {
-          viewer.innerHTML = `<p>Extracted Word Document Content:</p><div contenteditable="true">${result.value}</div>`;
-          edits.text = result.value; // Save text for export
+          viewer.innerHTML = `<p>Extracted Word Document Content:</p><div>${result.value}</div>`;
         })
         .catch((err) => {
           console.error(err);
@@ -115,59 +115,48 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsArrayBuffer(file);
   }
 
-  // Export File
-  exportButton.addEventListener("click", () => {
-    if (!currentFile || !currentFileType) return;
-
-    const link = document.createElement("a");
-    link.download = `Edited_${currentFile.name}`;
-
-    if (currentFileType === "pdf") {
-      alert("Export for PDF is under development.");
-    } else if (currentFileType === "pptx") {
-      alert("Export for PPTX is under development.");
-    } else if (currentFileType === "docx") {
-      const blob = new Blob([edits.text || ""], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-      link.href = URL.createObjectURL(blob);
+  // Add File to History
+  function addToHistory(fileName) {
+    if (!history.includes(fileName)) {
+      history.push(fileName);
+      localStorage.setItem("documentHistory", JSON.stringify(history));
     }
+  }
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Display History
+  viewHistory.addEventListener("click", () => {
+    historySection.classList.remove("hidden");
+    historyList.innerHTML = "";
+
+    history.forEach((fileName) => {
+      const li = document.createElement("li");
+      li.textContent = fileName;
+      historyList.appendChild(li);
+    });
   });
 
-  // Add Annotation to PDF
-  function addAnnotation(canvas, pageNum) {
-    const note = prompt(`Add a note to Page ${pageNum}:`);
-    if (note) {
-      const context = canvas.getContext("2d");
-      context.fillStyle = "yellow";
-      context.font = "16px Arial";
-      context.fillText(note, 10, canvas.height - 20); // Add note to canvas
-      edits[`page${pageNum}`] = note; // Save annotations
-    }
-  }
+  // Clear History
+  clearHistory.addEventListener("click", () => {
+    localStorage.removeItem("documentHistory");
+    history.length = 0;
+    historyList.innerHTML = "<p>History cleared!</p>";
+  });
+});
+// Open Fullscreen Viewer
+fullscreenViewer.classList.add("visible");
 
-  // Add Comment to PPT
-  function addComment(element, slideNum) {
-    const comment = prompt(`Add a comment to Slide ${slideNum}:`);
-    if (comment) {
-      const commentDiv = document.createElement("div");
-      commentDiv.className = "comment";
-      commentDiv.innerText = `Comment: ${comment}`;
-      element.appendChild(commentDiv);
-      edits[`slide${slideNum}`] = comment; // Save comments
-    }
-  }
+// Close Fullscreen Viewer
+closeViewer.addEventListener("click", () => {
+  fullscreenViewer.classList.remove("visible");
+  viewer.innerHTML = ""; // Clear viewer content
 });
 
-// Register the Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js')
-    .then((registration) => {
-      console.log('Service Worker registered with scope:', registration.scope);
-    })
-    .catch((err) => {
-      console.error('Service Worker registration failed:', err);
-    });
-}
+// Toggle History Section
+viewHistory.addEventListener("click", () => {
+  historySection.classList.add("visible");
+});
+
+// Close History Section
+clearHistory.addEventListener("click", () => {
+  historySection.classList.remove("visible");
+});
