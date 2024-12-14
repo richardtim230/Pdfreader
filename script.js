@@ -8,9 +8,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const fullscreenViewer = document.getElementById("fullscreenViewer");
   const viewer = document.getElementById("viewer");
   const closeViewer = document.getElementById("closeViewer");
+  const toggleMenu = document.getElementById("toggleMenu");
+  const menu = document.getElementById("menu");
 
-  // Initialize uploads from localStorage
+  // Initialize uploads and reading positions from localStorage
   const uploads = JSON.parse(localStorage.getItem("uploads")) || [];
+  const readingPositions = JSON.parse(localStorage.getItem("readingPositions")) || {};
 
   /**
    * Updates the Recent Uploads Section
@@ -18,7 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateRecentUploads() {
     recentUploadsList.innerHTML = ""; // Clear previous entries
 
-    // Show the last 3 uploads
     const recentFiles = uploads.slice(-30).reverse();
     recentFiles.forEach((upload) => {
       const li = createUploadListItem(upload);
@@ -49,13 +51,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const li = document.createElement("li");
     li.className = "upload-item";
 
-    // File Name
     const span = document.createElement("span");
     span.textContent = upload.name;
     span.addEventListener("click", () => loadUpload(upload));
     li.appendChild(span);
 
-    // Delete Button
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
     deleteButton.className = "delete-button";
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /**
    * Handles file input and saves the upload
    */
-  fileInput.addEventListener("change", async (event) => {
+  fileInput.addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -83,7 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.onload = (e) => {
       const fileContent = e.target.result;
 
-      // Save to uploads and reload the viewer
       saveUpload(file.name, fileType, fileContent);
       loadUpload({ name: file.name, type: fileType, content: fileContent });
     };
@@ -95,14 +94,13 @@ document.addEventListener("DOMContentLoaded", () => {
    * Saves an uploaded file to localStorage
    */
   function saveUpload(name, type, content) {
-    // Remove duplicates by file name
-    const index = uploads.findIndex((upload) => upload.name === name);
+    const encodedName = encodeURIComponent(name); // Handle spaces and special characters
+    const index = uploads.findIndex((upload) => upload.name === encodedName);
     if (index !== -1) {
-      uploads.splice(index, 1); // Remove the old entry
+      uploads.splice(index, 1); // Remove duplicate
     }
 
-    // Add the new or updated entry
-    uploads.push({ name, type, content });
+    uploads.push({ name: encodedName, type, content });
     localStorage.setItem("uploads", JSON.stringify(uploads));
 
     updateRecentUploads();
@@ -116,7 +114,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const index = uploads.findIndex((upload) => upload.name === name);
     if (index !== -1) {
       uploads.splice(index, 1); // Remove the entry
+      delete readingPositions[name]; // Remove associated reading position
       localStorage.setItem("uploads", JSON.stringify(uploads));
+      localStorage.setItem("readingPositions", JSON.stringify(readingPositions));
 
       updateRecentUploads();
       updateHistory();
@@ -124,31 +124,42 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Loads an uploaded file into the viewer
+   * Loads an uploaded file into the viewer and restores the reading position
    */
   function loadUpload(upload) {
     viewer.innerHTML = ""; // Clear previous content
     fullscreenViewer.classList.add("visible"); // Open the viewer
 
+    const readingPosition = readingPositions[upload.name] || 0;
+
     if (upload.type === "pdf") {
-      renderPDF(upload.content);
+      renderPDF(upload.content, readingPosition);
     } else if (upload.type === "pptx") {
-      renderPPT(upload.content);
+      renderPPT(upload.content, readingPosition);
     } else if (upload.type === "docx") {
-      renderDOCX(upload.content);
+      renderDOCX(upload.content, readingPosition);
     }
+  }
+
+  /**
+   * Saves the current reading position
+   */
+  function saveReadingPosition(name, position) {
+    readingPositions[name] = position;
+    localStorage.setItem("readingPositions", JSON.stringify(readingPositions));
   }
 
   /**
    * Renders a PDF file in the viewer
    */
-  async function renderPDF(content) {
+  async function renderPDF(content, startPage = 0) {
     try {
       const pdfjsLib = window["pdfjs-dist/build/pdf"];
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "./lib/pdf.worker.js";
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "./libs/pdf.worker.js";
 
       const pdf = await pdfjsLib.getDocument(content).promise;
-      for (let i = 1; i <= pdf.numPages; i++) {
+
+      for (let i = startPage + 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
@@ -159,6 +170,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         await page.render({ canvasContext: context, viewport }).promise;
         viewer.appendChild(canvas);
+
+        // Save reading position when scrolling
+        canvas.addEventListener("click", () => saveReadingPosition(upload.name, i));
       }
     } catch (error) {
       console.error("Error rendering PDF:", error);
@@ -169,18 +183,19 @@ document.addEventListener("DOMContentLoaded", () => {
   /**
    * Renders a PPTX file in the viewer
    */
-  async function renderPPT(content) {
+  async function renderPPT(content, startSlide = 0) {
     try {
       const arrayBuffer = await (await fetch(content)).arrayBuffer();
       const pptxLib = await import("https://unpkg.com/pptxgenjs@3.6.0/dist/pptxgen.min.js");
       const presentation = await pptxLib.PptxGenJS.load(arrayBuffer);
 
-      viewer.innerHTML = `<p>Loaded PPTX with ${presentation.slides.length} slides:</p>`;
-      presentation.slides.forEach((slide, index) => {
+      presentation.slides.slice(startSlide).forEach((slide, index) => {
         const slideElement = document.createElement("div");
-        slideElement.innerText = `Slide ${index + 1}: ${slide.title || "Untitled"}`;
+        slideElement.innerText = `Slide ${startSlide + index + 1}: ${slide.title || "Untitled"}`;
         slideElement.className = "slide-preview";
         viewer.appendChild(slideElement);
+
+        slideElement.addEventListener("click", () => saveReadingPosition(upload.name, startSlide + index));
       });
     } catch (error) {
       console.error("Error rendering PPTX:", error);
@@ -191,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /**
    * Renders a DOCX file in the viewer
    */
-  async function renderDOCX(content) {
+  async function renderDOCX(content, startOffset = 0) {
     try {
       const arrayBuffer = await (await fetch(content)).arrayBuffer();
       const mammoth = window.mammoth;
@@ -200,7 +215,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const textContainer = document.createElement("div");
       textContainer.className = "docx-text";
       textContainer.innerHTML = result.value.replace(/\n/g, "<br>"); // Preserve line breaks
+
+      textContainer.scrollTop = startOffset; // Restore scroll position
       viewer.appendChild(textContainer);
+
+      textContainer.addEventListener("scroll", () => saveReadingPosition(upload.name, textContainer.scrollTop));
     } catch (error) {
       console.error("Error rendering DOCX:", error);
       viewer.innerHTML = "<p>Failed to load DOCX file.</p>";
@@ -208,13 +227,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Clears the history from localStorage and UI
+   * Toggle Hamburger Menu
    */
-  clearHistory.addEventListener("click", () => {
-    localStorage.removeItem("uploads");
-    uploads.length = 0; // Clear the in-memory uploads array
-    updateRecentUploads();
-    updateHistory();
+  toggleMenu.addEventListener("click", () => {
+    menu.classList.toggle("hidden");
   });
 
   /**
@@ -223,6 +239,17 @@ document.addEventListener("DOMContentLoaded", () => {
   closeViewer.addEventListener("click", () => {
     fullscreenViewer.classList.remove("visible");
     viewer.innerHTML = ""; // Clear viewer content
+  });
+
+  /**
+   * Clear all history
+   */
+  clearHistory.addEventListener("click", () => {
+    localStorage.removeItem("uploads");
+    localStorage.removeItem("readingPositions");
+    uploads.length = 0;
+    updateRecentUploads();
+    updateHistory();
   });
 
   // Initialize the app
