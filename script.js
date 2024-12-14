@@ -26,93 +26,109 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Handle File Upload
-  fileInput.addEventListener("change", (event) => {
+  fileInput.addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (file) {
       const fileType = file.name.split(".").pop().toLowerCase();
       viewer.innerHTML = ""; // Clear previous content
 
+      // Open Fullscreen Viewer
+      fullscreenViewer.classList.add("visible");
+
+      // Render file based on type
       switch (fileType) {
         case "pdf":
-          renderPDF(file);
+          await renderPDF(file);
           break;
         case "pptx":
-          renderPPT(file);
+          await renderPPT(file);
           break;
         case "docx":
-          renderWord(file);
+          await renderWord(file);
           break;
         default:
           viewer.innerHTML = "<p>Unsupported file format!</p>";
+          fullscreenViewer.classList.remove("visible");
       }
 
       // Save file to history
       addToHistory(file.name);
-
-      // Open Fullscreen Viewer
-      fullscreenViewer.classList.remove("hidden");
     }
   });
 
   // Close Fullscreen Viewer
   closeViewer.addEventListener("click", () => {
-    fullscreenViewer.classList.add("hidden");
+    fullscreenViewer.classList.remove("visible");
     viewer.innerHTML = ""; // Clear viewer content
   });
 
   // Render PDF
   async function renderPDF(file) {
-    const pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "./lib/pdf.worker.js";
+    try {
+      const pdfjsLib = window['pdfjs-dist/build/pdf'];
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "./lib/pdf.worker.js";
 
-    const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      const viewport = page.getViewport({ scale: 1.5 });
+      const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        const viewport = page.getViewport({ scale: 1.5 });
 
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
-      await page.render({ canvasContext: context, viewport }).promise;
-      viewer.appendChild(canvas);
+        await page.render({ canvasContext: context, viewport }).promise;
+        viewer.appendChild(canvas);
+      }
+    } catch (error) {
+      console.error("Error rendering PDF:", error);
+      viewer.innerHTML = "<p>Failed to load PDF file.</p>";
     }
   }
 
   // Render PPTX
   async function renderPPT(file) {
-    const pptx = await file.arrayBuffer();
-    const pptxLib = await import('https://unpkg.com/pptxgenjs@3.6.0/dist/pptxgen.min.js');
-    const presentation = await pptxLib.PptxGenJS.load(pptx);
+    try {
+      const pptx = await file.arrayBuffer();
+      const pptxLib = await import('https://unpkg.com/pptxgenjs@3.6.0/dist/pptxgen.min.js');
+      const presentation = await pptxLib.PptxGenJS.load(pptx);
 
-    viewer.innerHTML = `<p>Loaded PPTX with ${presentation.slides.length} slides:</p>`;
-    presentation.slides.forEach((slide, index) => {
-      const slideElement = document.createElement("div");
-      slideElement.innerText = `Slide ${index + 1}: ${slide.title || "Untitled"}`;
-      slideElement.className = "slide-preview";
-      viewer.appendChild(slideElement);
-    });
+      viewer.innerHTML = `<p>Loaded PPTX with ${presentation.slides.length} slides:</p>`;
+      presentation.slides.forEach((slide, index) => {
+        const slideElement = document.createElement("div");
+        slideElement.innerText = `Slide ${index + 1}: ${slide.title || "Untitled"}`;
+        slideElement.className = "slide-preview";
+        viewer.appendChild(slideElement);
+      });
+    } catch (error) {
+      console.error("Error rendering PPTX:", error);
+      viewer.innerHTML = "<p>Failed to load PPTX file.</p>";
+    }
   }
 
   // Render DOCX
   async function renderWord(file) {
-    const reader = new FileReader();
-    reader.onload = function (event) {
-      const docx = event.target.result;
-      const mammoth = window.mammoth;
+    try {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const docx = event.target.result;
+        const mammoth = window.mammoth;
 
-      mammoth
-        .extractRawText({ arrayBuffer: docx })
-        .then((result) => {
-          viewer.innerHTML = `<p>Extracted Word Document Content:</p><div>${result.value}</div>`;
-        })
-        .catch((err) => {
-          console.error(err);
-          viewer.innerHTML = "<p>Failed to load DOCX file.</p>";
-        });
-    };
-    reader.readAsArrayBuffer(file);
+        mammoth
+          .extractRawText({ arrayBuffer: docx })
+          .then((result) => {
+            viewer.innerHTML = `<p>Extracted Word Document Content:</p><div>${result.value}</div>`;
+          })
+          .catch((err) => {
+            console.error("Error rendering DOCX:", err);
+            viewer.innerHTML = "<p>Failed to load DOCX file.</p>";
+          });
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      console.error("Error reading DOCX file:", error);
+    }
   }
 
   // Add File to History
@@ -125,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Display History
   viewHistory.addEventListener("click", () => {
-    historySection.classList.remove("hidden");
+    historySection.classList.add("visible");
     historyList.innerHTML = "";
 
     history.forEach((fileName) => {
@@ -142,21 +158,4 @@ document.addEventListener("DOMContentLoaded", () => {
     historyList.innerHTML = "<p>History cleared!</p>";
   });
 });
-// Open Fullscreen Viewer
-fullscreenViewer.classList.add("visible");
 
-// Close Fullscreen Viewer
-closeViewer.addEventListener("click", () => {
-  fullscreenViewer.classList.remove("visible");
-  viewer.innerHTML = ""; // Clear viewer content
-});
-
-// Toggle History Section
-viewHistory.addEventListener("click", () => {
-  historySection.classList.add("visible");
-});
-
-// Close History Section
-clearHistory.addEventListener("click", () => {
-  historySection.classList.remove("visible");
-});
