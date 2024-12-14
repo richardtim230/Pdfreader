@@ -178,7 +178,7 @@ body {
   top: 20px;
   left: 0;
   width: 100%;
-  height: calc(95%); /* Leaves space for the footer */
+  height: calc(100%); /* Leaves space for the footer */
   background: white;
   z-index: 1000;
   display: none; /* Hidden by default */
@@ -208,7 +208,7 @@ body {
 /* Close Button */
 .close-button {
   position: fixed;
-  top: 20px;
+  top: 20%;
   right: 10px;
   padding: 10px 20px;
   background: #ff6600;
