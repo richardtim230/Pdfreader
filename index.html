@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OAU-DOCs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-content">
+      <img src="assets/logo.png" alt="OAU-DOCs Logo" class="logo">
+      <h1>OAU-DOCs</h1>
+      <p>Your offline solution for reading and editing academic documents.</p>
+      <button id="startApp">Get Started</button>
+    </div>
+  </header>
+
+  <!-- Application Section -->
+  <main id="app">
+    <section class="upload-section hidden">
+      <h2>Upload Your Document</h2>
+      <input type="file" id="fileInput" accept=".pdf, .pptx, .docx">
+      <div id="viewer"></div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2024 OAU-DOCs. All rights reserved.</p>
+  </footer>
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+  <script src="https://unpkg.com/pptxgenjs@3.6.0/dist/pptxgen.min.js"></script>
+
+  <!-- Main Script -->
+  <script src="script.js"></script>
+</body>
+</html>
