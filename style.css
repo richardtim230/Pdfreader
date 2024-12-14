@@ -178,7 +178,7 @@ body {
   top: 20px;
   left: 0;
   width: 100%;
-  height: calc(95% - 30px); /* Leaves space for the footer */
+  height: calc(95% - 50px); /* Leaves space for the footer */
   background: white;
   z-index: 1000;
   display: none; /* Hidden by default */
