@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateRecentUploads() {
     recentUploadsList.innerHTML = ""; // Clear previous entries
 
-    const recentFiles = uploads.slice(-30).reverse();
+    const recentFiles = uploads.slice(-3).reverse();
     recentFiles.forEach((upload) => {
       const li = createUploadListItem(upload);
       recentUploadsList.appendChild(li);
@@ -51,8 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const li = document.createElement("li");
     li.className = "upload-item";
 
+    // Shorten long file names
+    const shortName = upload.name.length > 20 ? `${upload.name.substring(0, 17)}...` : upload.name;
+
     const span = document.createElement("span");
-    span.textContent = upload.name;
+    span.textContent = shortName;
+    span.title = upload.name; // Show full name on hover
     span.addEventListener("click", () => loadUpload(upload));
     li.appendChild(span);
 
