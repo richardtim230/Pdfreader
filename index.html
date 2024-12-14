@@ -15,6 +15,14 @@
       <p>Your offline solution for reading and editing academic documents.</p>
       <button id="startApp">Get Started</button>
     </div>
+
+    <!-- Hamburger Menu -->
+    <nav class="hamburger">
+      <span class="hamburger-icon" id="toggleMenu">☰</span>
+      <ul id="menu" class="hidden">
+        <li><button id="viewHistory">View History</button></li>
+      </ul>
+    </nav>
   </header>
 
   <!-- Application Section -->
@@ -22,7 +30,19 @@
     <section class="upload-section hidden">
       <h2>Upload Your Document</h2>
       <input type="file" id="fileInput" accept=".pdf, .pptx, .docx">
+    </section>
+
+    <!-- Fullscreen Viewer Section -->
+    <div id="fullscreenViewer" class="hidden">
+      <button id="closeViewer" class="close-button">Close</button>
       <div id="viewer"></div>
+    </div>
+
+    <!-- History Section -->
+    <section id="historySection" class="hidden">
+      <h2>Loaded Documents History</h2>
+      <ul id="historyList"></ul>
+      <button id="clearHistory">Clear History</button>
     </section>
   </main>
 
